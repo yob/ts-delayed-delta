@@ -27,7 +27,8 @@ class ThinkingSphinx::Deltas::Job < Delayed::Backend::ActiveRecord::Job
   # @param [Integer] priority (0)
   # 
   def self.enqueue(object, priority = 0)
-    ::Delayed::Job.enqueue(object, :priority => priority) unless duplicates_exist(object)
+    ::Delayed::Job.enqueue(object, :priority => priority, :queue => "default") unless duplicates_exist(object, "default")
+    ::Delayed::Job.enqueue(object, :priority => priority, :queue => "rimu")    unless duplicates_exist(object, "rimu")
   end
   
   # Remove all Thinking Sphinx/Delayed Delta jobs from the queue. If the
@@ -54,11 +55,12 @@ class ThinkingSphinx::Deltas::Job < Delayed::Backend::ActiveRecord::Job
   # @param [Object] object The job
   # @return [Boolean] True if a duplicate of the job already exists in the queue
   # 
-  def self.duplicates_exist(object)
+  def self.duplicates_exist(object, queue)
     count(
       :conditions => {
         :handler    => object.to_yaml,
-        :locked_at  => nil
+        :locked_at  => nil,
+        :queue      => queue
       }
     ) > 0
   end
